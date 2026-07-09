@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>शिक्षक पैनल - विद्यालय प्रबंधन</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #fc6076; --secondary: #ff9a44; }
+        body { font-family: 'Mukta', sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
+        header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display:flex; justify-content:space-between; align-items:center;}
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .panel-box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 30px; border-top: 5px solid var(--primary); }
+        label { font-weight: 600; display: block; margin-bottom: 5px; color: #333; margin-top: 15px;}
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-family: 'Mukta'; font-size: 16px; outline: none;}
+        .btn-3d { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; padding: 12px 25px; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top:20px;}
+        .btn-logout { background: #d32f2f; color:white; border:none; padding:8px 15px; border-radius:5px; font-weight:bold; cursor:pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; } th, td { border: 1px solid #eee; padding: 10px; text-align: center; } th { background: var(--primary); color: white; }
+        .m-inp { width: 60px; padding: 5px; text-align: center; border: 1px solid #aaa; border-radius: 4px; }
+        .btn-sm { padding: 8px 12px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight:bold;}
+        .ct-zone { background: #e3f2fd; border: 2px dashed #1565c0; padding: 20px; border-radius: 10px; margin-bottom: 30px; display: none; }
+        
+        /* Print Styles */
+        @media print { body * { visibility: hidden; } #printArea, #printArea * { visibility: visible; } #printArea { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 20px; box-shadow: none;} .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+    <header class="no-print"><h1 style="margin:0;">👨‍🏫 शिक्षक डैशबोर्ड</h1><button id="logoutBtn" class="btn-logout" style="display:none;" onclick="logout()">लॉगआउट</button></header>
+
+    <div class="container no-print" id="login-panel">
+        <div class="panel-box" style="max-width: 450px; margin: auto;">
+            <h2 style="text-align: center; color: var(--primary);">लॉगिन करें</h2>
+            <label>लॉगिन ID</label><input type="text" id="loginId">
+            <label>पासवर्ड</label><input type="password" id="loginPass">
+            <button class="btn-3d" id="loginBtn" onclick="doLogin()">डैशबोर्ड खोलें</button>
+        </div>
+    </div>
+
+    <div class="container no-print" id="dashboard-panel" style="display:none;">
+        <h2 id="teacherName" style="color: var(--primary);"></h2>
+        
+        <!-- CLASS TEACHER ZONE -->
+        <div id="ctZone" class="ct-zone">
+            <h2 style="color:#1565c0; margin-top:0;">👑 क्लास टीचर कंट्रोल रूम (<span id="ctClassName"></span>)</h2>
+            <p style="margin:0; color:#555;">(यहाँ से आप टेस्ट बना सकते हैं और पूरी क्लास की रैंक रिपोर्ट निकाल सकते हैं)</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                    <h3 style="margin-top:0; color:#333;">1. नया टेस्ट बनाएं</h3>
+                    <input type="text" id="newCtTestName" placeholder="टेस्ट का नाम (उदा: Weekly Test-1)">
+                    <button class="btn-3d" style="margin-top:10px; background:#1565c0;" onclick="createCtTest()">टेस्ट बनाएं</button>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                    <h3 style="margin-top:0; color:#333;">2. रिपोर्ट देखें / डिलीट करें</h3>
+                    <select id="ctTestSelect"><option value="">-- अपनी क्लास का टेस्ट चुनें --</option></select>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="btn-3d" style="margin-top:0; background:#4caf50;" onclick="viewCtReport()">रैंक रिपोर्ट</button>
+                        <button class="btn-3d" style="margin-top:0; background:#2196f3;" onclick="window.print()">🖨️ प्रिंट</button>
+                        <button class="btn-3d" style="margin-top:0; background:#f44336;" onclick="deleteCtTest()">🗑️ डिलीट</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Class & Subject Selection for Subject Teachers -->
+        <div class="panel-box" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div><label>कक्षा चुनें</label><select id="selClass" onchange="loadClassData()"><option value="">-- चुनें --</option><option>कक्षा 5</option><option>कक्षा 6</option><option>कक्षा 7</option><option>कक्षा 8</option><option>कक्षा 9</option><option>कक्षा 10</option><option>कक्षा 11</option><option>कक्षा 12</option></select></div>
+            <div><label>विषय चुनें</label><select id="selSubject" onchange="loadClassData()"><option value="">-- चुनें --</option><option>हिंदी</option><option>अंग्रेजी</option><option>गणित</option><option>विज्ञान</option><option>सामाजिक विज्ञान</option><option>संस्कृत</option></select></div>
+        </div>
+
+        <!-- 1. RBSE Main Marks -->
+        <div class="panel-box" style="overflow-x: auto;">
+            <h3 style="color: var(--primary);">📋 1. RBSE मुख्य अंक (कुल / प्राप्त)</h3>
+            <table><thead><tr><th>छात्र</th><th>1st Test</th><th>2nd Test</th><th>Half Yearly</th><th>3rd Test</th><th>Yearly</th><th>Total</th><th>Action</th></tr></thead><tbody id="marksBody"></tbody></table>
+        </div>
+
+        <!-- 2. NEW SYSTEM: CT Coordinated Test Bulk Entry -->
+        <div class="panel-box" style="border-top: 5px solid #1565c0; background: #f8fbff; overflow-x: auto;">
+            <h3 style="color: #1565c0;">📝 2. क्लास टीचर द्वारा बनाया गया टेस्ट (नंबर भरें)</h3>
+            <p style="margin:0; color:gray;">(यहाँ डाले गए नंबर से पूरी क्लास की रैंक रिपोर्ट बनेगी)</p>
+            
+            <div style="display:flex; gap:15px; margin-bottom:15px; margin-top:10px;">
+                <div style="width:50%;"><label>टेस्ट का नाम चुनें</label><select id="ctEntryTest" onchange="loadCtMarksTable()"><option value="">-- पहले कक्षा चुनें --</option></select></div>
+                <div style="width:50%;"><label>इस टेस्ट के कुल अंक (Max Marks)</label><input type="number" id="ctGlobalMax" oninput="updateCtMaxMarks()"></div>
+            </div>
+            
+            <table><thead><tr><th>छात्र का नाम</th><th>कुल अंक</th><th>प्राप्त अंक</th></tr></thead><tbody id="ctMarksBody"></tbody></table>
+            <button class="btn-3d" style="background: linear-gradient(135deg, #1565c0, #1976d2);" onclick="saveBulkCtMarks()">सभी छात्रों के नंबर सेव करें</button>
+        </div>
+
+        <!-- 3. Preboard / Notes / Diary -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px;">
+            <!-- Individual Preboard -->
+            <div class="panel-box">
+                <h3 style="color: var(--primary);">📝 व्यक्तिगत प्री-बोर्ड / अन्य टेस्ट</h3>
+                <label>छात्र चुनें</label><select id="pbStu"></select>
+                <label>टेस्ट का नाम</label><input type="text" id="pbName" placeholder="उदा: PreBoard-1">
+                <div style="display:flex; gap:10px;">
+                    <div style="width:50%;"><label>कुल अंक</label><input type="number" id="pbMax" placeholder="Max Marks"></div><div style="width:50%;"><label>प्राप्त अंक</label><input type="number" id="pbObt" placeholder="Obtained"></div>
+                </div>
+                <button class="btn-3d" onclick="savePreBoard()">टेस्ट सेव करें</button>
+            </div>
+
+            <!-- Diary & Notes -->
+            <div class="panel-box">
+                <h3 style="color: var(--primary);">📅 कक्षा की डायरी</h3>
+                <div style="display:flex; gap:10px;">
+                    <div style="width:50%;"><label>महीना</label><select id="diaryMonth"><option>जनवरी</option><option>फरवरी</option><option>मार्च</option><option>अप्रैल</option><option>मई</option><option>जून</option><option>जुलाई</option><option>अगस्त</option><option>सितंबर</option><option>अक्टूबर</option><option>नवंबर</option><option>दिसंबर</option></select></div>
+                    <div style="width:50%;"><label>तारीख</label><input type="number" id="diaryDate" placeholder="उदा: 15"></div>
+                </div>
+                <label>आज क्या पढ़ाया?</label><textarea id="diaryText" rows="2"></textarea>
+                <button class="btn-3d" onclick="saveDiary()" style="background: #11998e;">डायरी सेव करें</button>
+                
+                <hr style="margin:25px 0; border:0; border-top:1px solid #eee;">
+                
+                <h3 style="color: var(--primary);">📝 विशेष नोट</h3>
+                <label>छात्र चुनें</label><select id="noteStu"></select>
+                <label>टिप्पणी लिखें</label><textarea id="noteText" rows="2"></textarea>
+                <button class="btn-3d" onclick="saveNote()" style="background: #2193b0;">नोट सेव करें</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Area -->
+    <div id="printArea" style="display:none; padding:20px;">
+        <div style="text-align: center; border-bottom: 2px solid #333; margin-bottom: 20px; padding-bottom:10px;">
+            <h1 style="margin:0;">विद्यालय टेस्ट रिपोर्ट कार्ड</h1><h2 id="printTitle" style="margin:5px 0;"></h2>
+        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead id="printHead"></thead><tbody id="printBody"></tbody>
+        </table>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyB5bxIONb--C3VeGFmPUBPYIs26QnHQtd4", authDomain: "update-2be8b.firebaseapp.com", databaseURL: "https://update-2be8b-default-rtdb.firebaseio.com", projectId: "update-2be8b", storageBucket: "update-2be8b.firebasestorage.app", messagingSenderId: "264595421693", appId: "1:264595421693:web:388a12c27ffdf1ff060194" };
+        const app = initializeApp(firebaseConfig); const db = getDatabase(app);
+
+        let currentUser = null; let studentsDb = [], marksDb = [], pbDb = [], ctTests = [], ctMarks = [];
+
+        let savedTeacher = localStorage.getItem('loggedInTeacher');
+        if(savedTeacher) { currentUser = JSON.parse(savedTeacher); document.getElementById('login-panel').style.display='none'; document.getElementById('dashboard-panel').style.display='block'; document.getElementById('logoutBtn').style.display='block'; document.getElementById('teacherName').innerText="शिक्षक: "+currentUser.name; }
+
+        onValue(ref(db, 'students'), (snap) => { studentsDb = Object.values(snap.val() || {}).filter(x=>x); if(currentUser) window.loadClassData(); });
+        onValue(ref(db, 'marks'), (snap) => { marksDb = Object.values(snap.val() || {}).filter(x=>x); if(currentUser) window.loadClassData(); });
+        
+        onValue(ref(db, 'ctTestMaster'), (snap) => { ctTests = Object.values(snap.val() || {}).filter(x=>x); if(currentUser){ setupCTZone(); updateCTEntryDropdown(); }});
+        onValue(ref(db, 'ctTestMarks'), (snap) => { ctMarks = Object.values(snap.val() || {}).filter(x=>x); if(currentUser) loadCtMarksTable(); });
+
+        window.doLogin = async function() { let id=document.getElementById('loginId').value, pass=document.getElementById('loginPass').value; let btn=document.getElementById('loginBtn'); btn.innerText="Wait..."; try { let snap=await get(ref(db, 'staff')); let list=Object.values(snap.val()||{}).filter(x=>x); currentUser = list.find(s=>s.userId===id && s.pass===pass); if(currentUser){ localStorage.setItem('loggedInTeacher', JSON.stringify(currentUser)); location.reload(); }else alert("गलत ID/Pass"); }catch(e){alert("Net Error");} btn.innerText="डैशबोर्ड खोलें"; };
+        window.logout = function() { localStorage.removeItem('loggedInTeacher'); location.reload(); };
+
+        // CLASS TEACHER CONTROLS
+        function setupCTZone() {
+            if(currentUser && currentUser.classTeacherRole) {
+                document.getElementById('ctZone').style.display = 'block';
+                document.getElementById('ctClassName').innerText = currentUser.classTeacherRole;
+                let myTests = ctTests.filter(t => t.cls === currentUser.classTeacherRole);
+                document.getElementById('ctTestSelect').innerHTML = '<option value="">-- अपनी क्लास का टेस्ट चुनें --</option>' + myTests.map(t => `<option value="${t.testId}">${t.testName}</option>`).join('');
+            }
+        }
+
+        window.createCtTest = function() {
+            let tName = document.getElementById('newCtTestName').value.trim();
+            if(!tName) return alert("टेस्ट का नाम लिखें!");
+            let testId = Date.now().toString();
+            set(ref(db, 'ctTestMaster/' + testId), { testId, testName: tName, cls: currentUser.classTeacherRole }).then(()=> { alert("टेस्ट बन गया! अब सभी विषय अध्यापक इसमें नंबर डाल सकेंगे।"); document.getElementById('newCtTestName').value=''; });
+        };
+
+        window.deleteCtTest = function() {
+            let tId = document.getElementById('ctTestSelect').value;
+            if(!tId) return alert("पहले टेस्ट चुनें!");
+            if(confirm("क्या आप इस टेस्ट को डिलीट करना चाहते हैं?")) remove(ref(db, 'ctTestMaster/' + tId)).then(() => alert("टेस्ट डिलीट हो गया!"));
+        };
+
+        window.viewCtReport = function() {
+            let cls = currentUser.classTeacherRole, tId = document.getElementById('ctTestSelect').value;
+            if(!tId) return alert("टेस्ट चुनें!");
+            let tName = ctTests.find(t => t.testId === tId).testName;
+            let classStus = studentsDb.filter(s => s.cls === cls);
+            let marksData = ctMarks.filter(m => m.testId === tId);
+            let subjects = [...new Set(marksData.map(m => m.subject))];
+
+            if(subjects.length === 0) return alert("अभी तक किसी भी अध्यापक ने इस टेस्ट में नंबर नहीं डाले हैं!");
+
+            let report = classStus.map(stu => {
+                let sMarks = marksData.filter(m => m.stuId === stu.id);
+                let row = { name: stu.name, marks: {}, totObt: 0, totMax: 0 };
+                subjects.forEach(sub => { let m = sMarks.find(x => x.subject === sub); if(m) { row.marks[sub] = m.obt; row.totObt += Number(m.obt); row.totMax += Number(m.max); } else row.marks[sub] = "-"; });
+                row.perc = row.totMax > 0 ? ((row.totObt / row.totMax)*100).toFixed(1) : 0; return row;
+            });
+
+            report.sort((a,b) => b.totObt - a.totObt);
+
+            document.getElementById('printTitle').innerText = `कक्षा: ${cls} | टेस्ट: ${tName}`;
+            let th = `<tr><th style="border:1px solid #000; padding:8px;">Rank</th><th style="border:1px solid #000; padding:8px;">Student Name</th>`;
+            subjects.forEach(s => th += `<th style="border:1px solid #000; padding:8px;">${s}</th>`);
+            th += `<th style="border:1px solid #000; padding:8px;">Total</th><th style="border:1px solid #000; padding:8px;">%</th></tr>`;
+            document.getElementById('printHead').innerHTML = th;
+
+            document.getElementById('printBody').innerHTML = report.map((r, i) => {
+                let td = `<tr><td style="border:1px solid #000; padding:8px; text-align:center; font-weight:bold;">${i+1}</td><td style="border:1px solid #000; padding:8px;"><b>${r.name}</b></td>`;
+                subjects.forEach(s => td += `<td style="border:1px solid #000; padding:8px; text-align:center;">${r.marks[s]}</td>`);
+                td += `<td style="border:1px solid #000; padding:8px; text-align:center; font-weight:bold;">${r.totObt}/${r.totMax}</td><td style="border:1px solid #000; padding:8px; text-align:center; font-weight:bold;">${r.perc}%</td></tr>`;
+                return td;
+            }).join('');
+            
+            document.getElementById('printArea').style.display = 'block'; alert("रिपोर्ट बन गई है! प्रिंट बटन दबाएं।");
+        };
+
+        // SUBJECT TEACHER CONTROLS
+        window.loadClassData = function() {
+            let cls = document.getElementById('selClass').value, sub = document.getElementById('selSubject').value;
+            let mBody = document.getElementById('marksBody'), pbStu = document.getElementById('pbStu'), noteStu = document.getElementById('noteStu');
+            mBody.innerHTML = ""; pbStu.innerHTML = ""; noteStu.innerHTML = "";
+            window.updateCTEntryDropdown();
+
+            if(!cls || !sub || !currentUser) return;
+            let myStus = studentsDb.filter(s => s.cls === cls); if(!myStus.length) return;
+
+            myStus.forEach(stu => {
+                pbStu.innerHTML += `<option value="${stu.id}">${stu.name}</option>`;
+                noteStu.innerHTML += `<option value="${stu.id}">${stu.name}</option>`;
+
+                let m = marksDb.find(x => x.stuId == stu.id && x.subject == sub) || {m1:10, o1:'', m2:10, o2:'', mhy:70, ohy:'', m3:10, o3:'', my:100, oy:'', total:0};
+                mBody.innerHTML += `<tr id="row_${stu.id}"><td><b>${stu.name}</b></td>
+                    <td><input type="number" class="m-inp" value="${m.m1}"> / <input type="number" class="m-inp obt" value="${m.o1}" oninput="calcT('${stu.id}')"></td>
+                    <td><input type="number" class="m-inp" value="${m.m2}"> / <input type="number" class="m-inp obt" value="${m.o2}" oninput="calcT('${stu.id}')"></td>
+                    <td><input type="number" class="m-inp" value="${m.mhy}"> / <input type="number" class="m-inp obt" value="${m.ohy}" oninput="calcT('${stu.id}')"></td>
+                    <td><input type="number" class="m-inp" value="${m.m3}"> / <input type="number" class="m-inp obt" value="${m.o3}" oninput="calcT('${stu.id}')"></td>
+                    <td><input type="number" class="m-inp" value="${m.my}"> / <input type="number" class="m-inp obt" value="${m.oy}" oninput="calcT('${stu.id}')"></td>
+                    <td style="color:green; font-weight:bold;" id="tot_${stu.id}">${m.total}</td>
+                    <td><button class="btn-sm" onclick="saveMarks('${stu.id}')">Save</button></td></tr>`;
+            });
+        };
+
+        window.calcT = function(id) { let row = document.getElementById('row_'+id), inputs = row.querySelectorAll('.obt'), t = 0; inputs.forEach(i => t += Number(i.value)||0); document.getElementById('tot_'+id).innerText = t; };
+        window.saveMarks = function(stuId) { let sub = document.getElementById('selSubject').value, row = document.getElementById('row_'+stuId), inps = row.querySelectorAll('.m-inp'); let data = { stuId, subject: sub, m1: inps[0].value, o1: inps[1].value, m2: inps[2].value, o2: inps[3].value, mhy: inps[4].value, ohy: inps[5].value, m3: inps[6].value, o3: inps[7].value, my: inps[8].value, oy: inps[9].value, total: document.getElementById('tot_'+stuId).innerText }; set(ref(db, 'marks/' + stuId + "_" + sub), data).then(() => alert("अंक सेव!")); };
+        
+        // --- NEW BULK CT TEST ENTRY LOGIC ---
+        window.updateCTEntryDropdown = function() {
+            let cls = document.getElementById('selClass').value;
+            let classTests = ctTests.filter(t => t.cls === cls);
+            document.getElementById
